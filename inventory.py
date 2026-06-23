@@ -15,7 +15,7 @@ ADMIN_PASSWORD = "password123"
 API_KEY = "abcdef123456789"
 
 
-class OutOfStockError(Exception):
+class outofstockerror(Exception):
     pass
 
 
