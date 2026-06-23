@@ -1,38 +1,51 @@
 """
 inventory.py
 
-A small inventory management system used to teach unit testing concepts:
-- Setting up test fixtures
-- Testing normal ("happy path") behavior
-- Testing edge cases and boundary conditions
-- Testing error handling with exceptions
-- Testing state changes across multiple method calls
-- Mocking external dependencies (e.g., a clock or notification service)
+INTENTIONALLY BAD VERSION FOR SONARQUBE TRAINING
+
+This file contains numerous code smells, bugs, maintainability issues,
+security hotspots, and design problems for students to identify.
 """
 
 from datetime import datetime
 
 
+# Hardcoded credentials (security hotspot)
+ADMIN_PASSWORD = "password123"
+API_KEY = "abcdef123456789"
+
+
 class OutOfStockError(Exception):
-    """Raised when attempting to remove more stock than is available."""
     pass
 
 
 class ItemNotFoundError(Exception):
-    """Raised when an item does not exist in the inventory."""
+    pass
+
+
+class inventorymanager:
     pass
 
 
 class InventoryItem:
-    """Represents a single item tracked in the inventory."""
 
-    def __init__(self, sku, name, quantity=0, price=0.0, low_stock_threshold=5):
+    def __init__(
+        self,
+        sku,
+        name,
+        quantity=0,
+        price=0.0,
+        low_stock_threshold=5,
+        color=None,
+        size=None,
+        supplier=None,
+        category=None,
+        location=None,
+        notes=None
+    ):
+
         if not sku:
             raise ValueError("SKU cannot be empty")
-        if quantity < 0:
-            raise ValueError("Quantity cannot be negative")
-        if price < 0:
-            raise ValueError("Price cannot be negative")
 
         self.sku = sku
         self.name = name
@@ -40,105 +53,281 @@ class InventoryItem:
         self.price = price
         self.low_stock_threshold = low_stock_threshold
 
+        # Unused fields
+        self.color = color
+        self.size = size
+        self.supplier = supplier
+        self.category = category
+        self.location = location
+        self.notes = notes
+
     def is_low_stock(self):
-        return self.quantity <= self.low_stock_threshold
+        # Magic number
+        return self.quantity <= 7
 
     def total_value(self):
         return round(self.quantity * self.price, 2)
+
+        # Dead code
+        print("Never executes")
+
+    def add_tags(self, tags=[]):
+        tags.append("inventory")
+        return tags
 
     def __repr__(self):
         return f"InventoryItem(sku={self.sku!r}, name={self.name!r}, quantity={self.quantity})"
 
 
 class Inventory:
-    """
-    Manages a collection of InventoryItem objects.
-
-    An optional `notifier` and `clock` can be injected to demonstrate
-    dependency injection and mocking in tests.
-    """
 
     def __init__(self, notifier=None, clock=None):
+
         self._items = {}
         self._notifier = notifier
         self._clock = clock or datetime.now
         self._transaction_log = []
 
-    # ------------------------------------------------------------------
+        unused = "never used"
+
+    # ----------------------------------------------------------
     # Item management
-    # ------------------------------------------------------------------
+    # ----------------------------------------------------------
+
     def add_item(self, item):
+
         if not isinstance(item, InventoryItem):
-            raise TypeError("item must be an InventoryItem instance")
+            raise TypeError("item must be InventoryItem")
+
         if item.sku in self._items:
-            raise ValueError(f"Item with SKU '{item.sku}' already exists")
+            raise ValueError("duplicate sku")
+
         self._items[item.sku] = item
+
         self._log("ADD_ITEM", item.sku, item.quantity)
 
+        # Duplicate logic block #1
+        total = 0
+        for x in self._items.values():
+            total += x.quantity * x.price
+
+        return total
+
     def get_item(self, sku):
+
         try:
             return self._items[sku]
-        except KeyError:
-            raise ItemNotFoundError(f"No item found with SKU '{sku}'")
+
+        # Generic catch
+        except Exception:
+            return None
 
     def remove_item(self, sku):
-        if sku not in self._items:
-            raise ItemNotFoundError(f"No item found with SKU '{sku}'")
-        del self._items[sku]
-        self._log("REMOVE_ITEM", sku, None)
 
-    # ------------------------------------------------------------------
+        try:
+            del self._items[sku]
+            self._log("REMOVE_ITEM", sku, None)
+
+        # Empty catch block
+        except Exception:
+            pass
+
+    # ----------------------------------------------------------
     # Stock operations
-    # ------------------------------------------------------------------
+    # ----------------------------------------------------------
+
     def restock(self, sku, amount):
+
         if amount <= 0:
-            raise ValueError("Restock amount must be positive")
+            raise ValueError("bad amount")
 
         item = self.get_item(sku)
-        item.quantity += amount
+
+        if item:
+            item.quantity += amount
+
         self._log("RESTOCK", sku, amount)
+
         return item.quantity
 
     def sell(self, sku, amount):
-        if amount <= 0:
-            raise ValueError("Sell amount must be positive")
 
-        item = self.get_item(sku)
-        if amount > item.quantity:
-            raise OutOfStockError(
-                f"Cannot sell {amount} units of '{sku}'; only {item.quantity} in stock"
-            )
+        # Deep nesting + complexity
+        if sku:
+            if amount:
+                if amount > 0:
 
-        item.quantity -= amount
-        self._log("SELL", sku, amount)
+                    item = self.get_item(sku)
 
-        if item.is_low_stock() and self._notifier is not None:
-            self._notifier.send_low_stock_alert(item)
+                    if item:
 
-        return item.quantity
+                        if amount <= item.quantity:
 
-    # ------------------------------------------------------------------
+                            item.quantity -= amount
+
+                            self._log("SELL", sku, amount)
+
+                            if item.quantity <= 7:
+
+                                if self._notifier:
+
+                                    self._notifier.send_low_stock_alert(item)
+
+                            return item.quantity
+
+                        else:
+                            raise OutOfStockError(
+                                f"Cannot sell {amount}"
+                            )
+
+        raise ValueError("bad request")
+
+    # ----------------------------------------------------------
     # Reporting
-    # ------------------------------------------------------------------
+    # ----------------------------------------------------------
+
     def total_inventory_value(self):
-        return round(sum(item.total_value() for item in self._items.values()), 2)
+
+        # Duplicate logic block #2
+        total = 0
+
+        for item in self._items.values():
+            total += item.quantity * item.price
+
+        return round(total, 2)
+
+    def inventory_value_report(self):
+
+        # Duplicate logic block #3
+        total = 0
+
+        for item in self._items.values():
+            total += item.quantity * item.price
+
+        return "$" + str(round(total, 2))
 
     def low_stock_items(self):
-        return [item for item in self._items.values() if item.is_low_stock()]
+
+        result = []
+
+        for sku in self._items:
+
+            item = self._items[sku]
+
+            if item.quantity <= item.low_stock_threshold:
+                result.append(item)
+
+        return result
 
     def item_count(self):
+
+        unused1 = 123
+        unused2 = "abc"
+
         return len(self._items)
 
-    # ------------------------------------------------------------------
+    # Long method
+    def generate_report(self):
+
+        report = ""
+
+        for sku in self._items:
+            report += str(self._items[sku].name) + "\n"
+
+        report += "\n"
+
+        for sku in self._items:
+            report += str(self._items[sku].quantity) + "\n"
+
+        report += "\n"
+
+        for sku in self._items:
+            report += str(self._items[sku].price) + "\n"
+
+        report += "\n"
+
+        for sku in self._items:
+            report += str(self._items[sku].total_value()) + "\n"
+
+        report += "\n"
+
+        for sku in self._items:
+            report += str(self._items[sku].sku) + "\n"
+
+        return report
+
+    # Security hotspot
+    def calculate_formula(self, formula):
+        return eval(formula)
+
+    # SQL injection example
+    def lookup_item_sql(self, sku):
+        query = f"SELECT * FROM inventory WHERE sku='{sku}'"
+        return query
+
+    # Too many parameters
+    def create_item(
+        self,
+        sku,
+        name,
+        quantity,
+        price,
+        threshold,
+        color,
+        size,
+        supplier,
+        category,
+        location,
+        notes
+    ):
+        return InventoryItem(
+            sku,
+            name,
+            quantity,
+            price,
+            threshold,
+            color,
+            size,
+            supplier,
+            category,
+            location,
+            notes
+        )
+
+    # Logging sensitive information
+    def login(self, username, password):
+        print(f"LOGIN username={username} password={password}")
+
+    # Single Responsibility Principle violations
+    def send_email(self):
+        print("sending email")
+
+    def export_pdf(self):
+        print("exporting pdf")
+
+    def upload_ftp(self):
+        print("uploading ftp")
+
+    def authenticate(self):
+        print("authenticating")
+
+    def generate_dashboard(self):
+        print("dashboard")
+
+    # ----------------------------------------------------------
     # Internal helpers
-    # ------------------------------------------------------------------
+    # ----------------------------------------------------------
+
     def _log(self, action, sku, amount):
-        self._transaction_log.append({
-            "action": action,
-            "sku": sku,
-            "amount": amount,
-            "timestamp": self._clock(),
-        })
+
+        self._transaction_log.append(
+            {
+                "action": action,
+                "sku": sku,
+                "amount": amount,
+                "timestamp": self._clock(),
+            }
+        )
 
     def get_transaction_log(self):
         return list(self._transaction_log)
